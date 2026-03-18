@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Quản lý sản phẩm</title>
+<style>
+body{
+    font-family: Arial;
+    background:#f0f4f8;
+    padding:20px;
+}
+h1{
+    text-align:center;
+}
+.container{
+    max-width:900px;
+    margin:auto;
+    background:white;
+    padding:20px;
+    border-radius:10px;
+}
+input, select{
+    padding:8px;
+    margin:5px 0;
+    width:100%;
+}
+button{
+    padding:8px 12px;
+    margin-top:10px;
+    cursor:pointer;
+}
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+th, td{
+    border:1px solid #ccc;
+    padding:10px;
+    text-align:center;
+}
+.empty{
+    text-align:center;
+    margin-top:20px;
+    color:gray;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Quản lý sản phẩm</h1>
+
+    <form id="form">
+        <input type="text" id="name" placeholder="Tên sản phẩm">
+        <select id="category">
+            <option value="">Chọn danh mục</option>
+            <option>Điện tử</option>
+            <option>Thời trang</option>
+        </select>
+        <input type="number" id="price" placeholder="Giá">
+        <input type="number" id="quantity" placeholder="Số lượng">
+        <button type="submit">Thêm sản phẩm</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tên</th>
+                <th>Danh mục</th>
+                <th>Giá</th>
+                <th>Số lượng</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="list"></tbody>
+    </table>
+
+    <p id="emptyText" class="empty">Chưa có sản phẩm</p>
+</div>
+
+<script>
+let listProduct = JSON.parse(localStorage.getItem("data")) || [];
+let id = listProduct.length;
+
+let form = document.getElementById("form");
+let nameInput = document.getElementById("name");
+let cateInput = document.getElementById("category");
+let priceInput = document.getElementById("price");
+let quantityInput = document.getElementById("quantity");
+let list = document.getElementById("list");
+let emptyText = document.getElementById("emptyText");
+
+form.addEventListener("submit", function(e){
+    e.preventDefault();
+
+    let name = nameInput.value.trim();
+    let cate = cateInput.value;
+    let price = Number(priceInput.value);
+    let qty = Number(quantityInput.value);
+
+    if(name === "" || cate === "" || price < 0 || qty < 0){
+        alert("Nhập sai!");
+        return;
+    }
+
+    let sp = {
+        id: id++,
+        name: name,
+        category: cate,
+        price: price,
+        quantity: qty
+    };
+
+    listProduct.push(sp);
+
+    localStorage.setItem("data", JSON.stringify(listProduct));
+
+    render();
+
+    form.reset();
+});
+
+function removeItem(id){
+    let ok = confirm("Xóa sản phẩm?");
+    if(!ok) return;
+
+    listProduct = listProduct.filter(item => item.id !== id);
+
+    localStorage.setItem("data", JSON.stringify(listProduct));
+
+    render();
+}
+
+function render(){
+    list.innerHTML = "";
+
+    if(listProduct.length === 0){
+        emptyText.style.display = "block";
+        return;
+    }
+
+    emptyText.style.display = "none";
+
+    for(let i = 0; i < listProduct.length; i++){
+        let p = listProduct[i];
+
+        let row = `
+        <tr>
+            <td>${p.name}</td>
+            <td>${p.category}</td>
+            <td>${p.price}</td>
+            <td>${p.quantity}</td>
+            <td>
+                <button onclick="removeItem(${p.id})">Xóa</button>
+            </td>
+        </tr>
+        `;
+
+        list.innerHTML += row;
+    }
+}
+
+render();
+</script>
+
+</body>
+</html>
