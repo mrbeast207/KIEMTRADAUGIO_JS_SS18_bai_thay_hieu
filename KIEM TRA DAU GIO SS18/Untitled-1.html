@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Quản lý liên hệ</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .header {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .form-section,
+    .table-section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .contact-form {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .contact-form input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .btn-add {
+      background: blue;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    /* TABLE */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    /* BUTTON ĐẸP */
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn-edit,
+    .btn-delete {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-edit {
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      color: white;
+    }
+
+    .btn-edit:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 12px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-delete {
+      background: linear-gradient(135deg, #ef4444, #f87171);
+      color: white;
+    }
+
+    .btn-delete:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 12px rgba(239, 68, 68, 0.4);
+    }
+
+    .btn-edit:active,
+    .btn-delete:active {
+      transform: scale(0.95);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <div class="header">
+      <h1>Quản lý liên hệ</h1>
+    </div>
+
+    <div class="form-section">
+      <form id="contact-form" class="contact-form">
+        <input type="text" id="contact-name" placeholder="Họ tên">
+        <input type="text" id="contact-phone" placeholder="SĐT">
+        <input type="text" id="contact-email" placeholder="Email">
+        <button type="submit" class="btn-add">Thêm</button>
+      </form>
+    </div>
+
+    <div class="table-section">
+      <table>
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Họ tên</th>
+            <th>SĐT</th>
+            <th>Email</th>
+            <th>Hành động</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+
+      <div id="empty" class="empty-state">
+        <p>Chưa có liên hệ</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    "use strict";
+
+    let contacts = [
+      { name: "Nguyễn Văn An", phone: "0901234567", email: "an@gmail.com" },
+      { name: "Trần Thị Bình", phone: "0912345678", email: "binh@gmail.com" },
+      { name: "Lê Văn Cường", phone: "0923456789", email: "cuong@gmail.com" },
+      { name: "Phạm Thị Dung", phone: "0934567890", email: "dung@gmail.com" },
+      { name: "Hoàng Văn Em", phone: "0945678901", email: "em@gmail.com" }
+    ];
+
+    let editingIndex = null;
+
+    const form = document.getElementById("contact-form");
+    const tableBody = document.getElementById("table-body");
+    const emptyDiv = document.getElementById("empty");
+    const submitBtn = document.querySelector(".btn-add");
+
+    function validateContact(name, phone, email) {
+
+      if (!name) {
+        alert("Họ tên không được để trống!");
+        return false;
+      }
+
+      if (name.length < 2) {
+        alert("Họ tên phải có ít nhất 2 ký tự!");
+        return false;
+      }
+
+      const nameRegex = /^[a-zA-ZÀ-ỹ\s]+$/;
+      if (!nameRegex.test(name)) {
+        alert("Họ tên không hợp lệ!");
+        return false;
+      }
+
+      if (!phone) {
+        alert("SĐT không được để trống!");
+        return false;
+      }
+
+      const phoneRegex = /^(0\d{9}|\+84\d{9})$/;
+      if (!phoneRegex.test(phone)) {
+        alert("SĐT không hợp lệ!");
+        return false;
+      }
+
+      if (!email) {
+        alert("Email không được để trống!");
+        return false;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        alert("Email không hợp lệ!");
+        return false;
+      }
+
+      if (editingIndex === null) {
+        const exists = contacts.some(c => c.email.toLowerCase() === email.toLowerCase());
+        if (exists) {
+          alert("Email đã tồn tại!");
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    function renderTable() {
+      tableBody.innerHTML = "";
+
+      if (contacts.length === 0) {
+        emptyDiv.style.display = "block";
+        return;
+      } else {
+        emptyDiv.style.display = "none";
+      }
+
+      contacts.forEach((c, i) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${c.name}</td>
+      <td>${c.phone}</td>
+      <td>${c.email}</td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn-edit" onclick="editContact(${i})">✏️ Sửa</button>
+          <button class="btn-delete" onclick="deleteContact(${i})">🗑️ Xóa</button>
+        </div>
+      </td>
+    `;
+
+        tableBody.appendChild(tr);
+      });
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("contact-name").value.trim();
+      const phone = document.getElementById("contact-phone").value.trim();
+      const email = document.getElementById("contact-email").value.trim();
+
+      if (!validateContact(name, phone, email)) return;
+
+      if (editingIndex !== null) {
+        contacts[editingIndex] = { name, phone, email };
+        editingIndex = null;
+        submitBtn.textContent = "Thêm";
+        alert("Cập nhật thành công");
+      } else {
+        contacts.push({ name, phone, email });
+        alert("Thêm thành công");
+      }
+
+      form.reset();
+      renderTable();
+    });
+
+    function editContact(i) {
+      const c = contacts[i];
+
+      document.getElementById("contact-name").value = c.name;
+      document.getElementById("contact-phone").value = c.phone;
+      document.getElementById("contact-email").value = c.email;
+
+      editingIndex = i;
+      submitBtn.textContent = "Cập nhật";
+    }
+
+    function deleteContact(i) {
+      if (confirm("Bạn chắc chắn muốn xóa?")) {
+        contacts.splice(i, 1);
+        renderTable();
+        alert("Xóa thành công");
+      }
+    }
+
+    renderTable();
+
+  </script>
+
+</body>
+
+</html>
